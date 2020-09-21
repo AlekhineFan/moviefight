@@ -4,9 +4,6 @@ const autoCompleteConfig = {
     return `<img src="${imgSrc}"/>
     ${movie.Title} (${movie.Year})`;
   },
-  onOptionSelect(movie) {
-    onMovieSelect(movie);
-  },
   inputValue(movie) {
     return movie.Title;
   },
@@ -27,24 +24,61 @@ const autoCompleteConfig = {
 createAutoComplete({
   ...autoCompleteConfig,
   root: document.querySelector("#right-autocomplete"),
+  onOptionSelect(movie) {
+    document.querySelector(".tutorial").classList.add("is-hidden");
+    onMovieSelect(movie, document.querySelector("#right-summary"), "right");
+  },
 });
 createAutoComplete({
   ...autoCompleteConfig,
   root: document.querySelector("#left-autocomplete"),
+  onOptionSelect(movie) {
+    document.querySelector(".tutorial").classList.add("is-hidden");
+    onMovieSelect(movie, document.querySelector("#left-summary"), "left");
+  },
 });
 
-const onMovieSelect = async (movie) => {
+let leftMovie;
+let rightMovie;
+
+const onMovieSelect = async (movie, summaryElement, side) => {
   const res = await axios.get("http://www.omdbapi.com/", {
     params: {
       apikey: "601c9aa6",
       i: movie.imdbID,
     },
   });
-  //console.log(res.data);
-  document.querySelector("#summary").innerHTML = movieTemplate(res.data);
+  summaryElement.innerHTML = movieTemplate(res.data);
+  if (side === "left") {
+    leftMovie = res.data;
+  } else {
+    rightMovie = res.data;
+  }
+  if (leftMovie && rightMovie) {
+    runComparison();
+  }
+};
+
+const runComparison = () => {
+  console.log("Comparing...");
 };
 
 const movieTemplate = (movieDetail) => {
+  const dollars = parseInt(
+    movieDetail.BoxOffice.replace(/\$/g, "").replace(/\,/g, "")
+  );
+  const metaScore = parseInt(movieDetail.Metascore);
+  const imdb = parseFloat(movieDetail.imdbRating);
+  const votes = parseInt(movieDetail.imdbVotes.replace(/\,/g, ""));
+  const awards = movieDetail.Awards.split(" ").reduce((acc, curr) => {
+    const val = parseInt(curr);
+    if (isNaN(val)) {
+      return acc;
+    } else {
+      return acc + val;
+    }
+  }, 0);
+
   return `
   <article class="media">
     <figure class="media-left">
